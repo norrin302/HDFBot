@@ -8,6 +8,14 @@ const withPWA = require("next-pwa")({
 
 module.exports = withBundleAnalyzer(
   withPWA({
+    async rewrites() {
+      return [
+        {
+          source: '/api/chat',
+          destination: '/api/chat/openai',
+        },
+      ]
+    },
     reactStrictMode: true,
     images: {
       remotePatterns: [

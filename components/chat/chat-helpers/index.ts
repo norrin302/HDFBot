@@ -215,7 +215,8 @@ export const handleHostedChat = async (
     formattedMessages = draftMessages
   }
 
-  const apiEndpoint = "/api/chat/openai"
+  const apiEndpoint =
+  provider === "custom" ? "/api/chat/custom" : `/api/chat/${provider}`
 
   const requestBody = {
     chatSettings: payload.chatSettings,

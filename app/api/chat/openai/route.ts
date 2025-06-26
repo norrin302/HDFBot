@@ -17,8 +17,7 @@ export async function POST(request: Request) {
   try {
     const profile = await getServerProfile()
 
-    // We still need the API key for n8n's internal OpenAI calls, so this check is good
-    checkApiKey(profile.openai_api_key, "OpenAI")
+    // checkApiKey(profile.openai_api_key, "OpenAI") // Temporarily commented out for debugging
 
     // --- MODIFICATION START ---
 

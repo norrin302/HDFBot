@@ -219,14 +219,15 @@ export const useChatHandler = () => {
         ...availableOpenRouterModels
       ].find(llm => llm.modelId === chatSettings?.model)
 
-      validateChatSettings(
-        chatSettings,
-        modelData,
-        profile,
-        selectedWorkspace,
-        messageContent
-      )
-
+ /*
+validateChatSettings(
+  chatSettings,
+  modelData,
+  profile,
+  selectedWorkspace,
+  messageContent
+)
+*/
       let currentChat = selectedChat ? { ...selectedChat } : null
 
       const b64Images = newMessageImages.map(image => image.base64)

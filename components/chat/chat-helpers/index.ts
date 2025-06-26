@@ -201,6 +201,8 @@ export const handleHostedChat = async (
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>,
   setToolInUse: React.Dispatch<React.SetStateAction<string>>
 ) => {
+  console.log("--- handleHostedChat STARTED ---"); // <<< NEW LOG 1
+
   const provider =
     modelData.provider === "openai" && profile.use_azure_openai
       ? "azure"
@@ -215,8 +217,7 @@ export const handleHostedChat = async (
     formattedMessages = draftMessages
   }
 
-  const apiEndpoint =
-  provider === "custom" ? "/api/chat/custom" : `/api/chat/${provider}`
+  const apiEndpoint = "/api/chat/openai" // We keep this hardcoded fix
 
   const requestBody = {
     chatSettings: payload.chatSettings,
@@ -254,6 +255,8 @@ export const fetchChatResponse = async (
   setIsGenerating: React.Dispatch<React.SetStateAction<boolean>>,
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
 ) => {
+  console.log("--- fetchChatResponse STARTED ---, URL:", url); // <<< NEW LOG 2
+
   const response = await fetch(url, {
     method: "POST",
     body: JSON.stringify(body),

@@ -1,9 +1,7 @@
 import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
 import { ChatSettings } from "@/types"
-import { OpenAIStream, StreamingTextResponse } from "ai" // Keep for stream handling if needed, but the source will change
+import { OpenAIStream, StreamingTextResponse } from "ai"
 import { ServerRuntime } from "next"
-// import OpenAI from "openai" // We will NOT directly use the OpenAI client here anymore
-// import { ChatCompletionCreateParamsBase } from "openai/resources/chat/completions.mjs" // Not directly needed
 
 export const runtime: ServerRuntime = "edge"
 
@@ -14,64 +12,48 @@ export async function POST(request: Request) {
     messages: any[]
   }
 
+  console.log("ROUTE: Received POST request to /api/chat/openai"); // LOG 1
+  console.log("ROUTE: Chat Settings:", chatSettings); // LOG 2
+  console.log("ROUTE: Messages:", messages); // LOG 3
+
   try {
     const profile = await getServerProfile()
+    console.log("ROUTE: Server Profile obtained:", profile); // LOG 4
 
-    // checkApiKey(profile.openai_api_key, "OpenAI") // Temporarily commented out for debugging
+    // checkApiKey(profile.openai_api_key, "OpenAI") // Keep this commented for now
+    console.log("ROUTE: API Key check bypassed."); // LOG 5
 
-    // --- MODIFICATION START ---
-
-    // Get the n8n webhook URL from environment variables
-    // This assumes your NEXT_PUBLIC_OPENAI_APT_HOST now contains the FULL n8n webhook URL
-    // e.g., https://n8n.iron-giant.com/webhook/your-unique-id
     const n8nWebhookUrl = process.env.NEXT_PUBLIC_OPENAI_APT_HOST
+    console.log("ROUTE: n8n Webhook URL:", n8nWebhookUrl); // LOG 6
 
     if (!n8nWebhookUrl) {
       throw new Error("n8n Webhook URL (NEXT_PUBLIC_OPENAI_APT_HOST) is not configured.")
     }
 
-    // Prepare the payload for your n8n webhook
-    // Your n8n webhook expects a 'messages' array in the body
     const n8nPayload = {
-      messages: messages // Directly pass the messages array to n8n
-      // You might also want to pass chatSettings if your n8n workflow uses them
-      // chatSettings: chatSettings
+      messages: messages
     }
+    console.log("ROUTE: n8n Payload:", JSON.stringify(n8nPayload)); // LOG 7
 
-    // Make a fetch request to your n8n webhook URL
     const n8nResponse = await fetch(n8nWebhookUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // Pass the OpenAI API Key from the profile to n8n if n8n requires it
-        // (your n8n HTTP Request node uses "Predefined Credential", so this might not be strictly necessary here,
-        // but it's good practice or if you later switch n8n to expect it in headers)
-        "Authorization": `Bearer ${profile.openai_api_key}`
       },
       body: JSON.stringify(n8nPayload)
     })
+    console.log("ROUTE: n8n Response status:", n8nResponse.status); // LOG 8
 
-    // Check if the n8n response was successful
     if (!n8nResponse.ok) {
       const errorData = await n8nResponse.json()
+      console.error("ROUTE: n8n Response Error Data:", errorData); // LOG 9
       throw new Error(`n8n Workflow Error: ${errorData.errorMessage || n8nResponse.statusText}`)
     }
 
-    // Assuming your n8n webhook responds with a JSON object containing 'answer' or similar.
-    // Your n8n workflow's Webhook Response node currently outputs the content directly.
-    // Let's adjust this to read the n8n response correctly.
-
-    // If your n8n webhook response is plain text (from Webhook Response option 1):
-    // const responseText = await n8nResponse.text();
-    // return new Response(responseText, { status: 200, headers: { 'Content-Type': 'text/plain' } });
-
-    // If your n8n webhook response is a JSON object like {"answer": "..."} (from Webhook Response option 2):
     const n8nJson = await n8nResponse.json();
-    const assistantContent = n8nJson.answer; // Assuming your n8n webhook sends {"answer": "..."}
+    console.log("ROUTE: n8n JSON Response:", n8nJson); // LOG 10
+    const assistantContent = n8nJson.answer;
 
-    // Create a mock stream to align with StreamingTextResponse, if the UI expects it
-    // Or just return a plain JSON response
-    // For now, let's return a simple Response as it's not a direct OpenAI stream
     return new Response(JSON.stringify({
         choices: [{
             message: {
@@ -86,9 +68,8 @@ export async function POST(request: Request) {
         }
     });
 
-    // --- MODIFICATION END ---
-
   } catch (error: any) {
+    console.error("ROUTE: Caught error in API route:", error.message); // LOG 11
     let errorMessage = error.message || "An unexpected error occurred"
     const errorCode = error.status || 500
 
@@ -98,8 +79,7 @@ export async function POST(request: Request) {
     } else if (errorMessage.toLowerCase().includes("incorrect api key")) {
       errorMessage =
         "OpenAI API Key is incorrect. Please fix it in your profile settings."
-    } else if (errorMessage.toLowerCase().includes("n8n workflow error")) {
-      // Catch specific n8n errors
+    } else if (errorMessage.toLowerCase().includes("backend workflow error")) {
       errorMessage = `Backend Workflow Error: ${errorMessage}`
     }
 
